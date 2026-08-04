@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Lesson 1 — Intro to AI &amp; LLMs</title>
+<style>
+  :root{
+    --accent:#ff2e97;
+    --accent2:#7c3aed;
+    --bg:#050509;
+    --ink:#f7f7ff;
+    --muted:#b9b9d6;
+    --card:rgba(255,255,255,.06);
+    --stroke:rgba(255,255,255,.14);
+    --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    --mono: "SFMono-Regular",ui-monospace,Menlo,Consolas,"Liberation Mono",monospace;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:var(--font);
+    overflow:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- animated background ---------- */
+  .bg{position:fixed;inset:0;overflow:hidden;z-index:0;filter:saturate(1.1)}
+  /* dark scrim over the color blobs so text always sits on a dark base */
+  .bg::after{content:"";position:absolute;inset:0;background:radial-gradient(120% 120% at 50% 40%,rgba(5,5,9,.55),rgba(5,5,9,.86) 70%,rgba(5,5,9,.95));z-index:1}
+  .blob{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(80px);opacity:.22;mix-blend-mode:screen;will-change:transform}
+  .b1{background:radial-gradient(circle at 30% 30%,#ff2e97,transparent 60%);top:-15%;left:-10%;animation:float1 18s ease-in-out infinite}
+  .b2{background:radial-gradient(circle at 30% 30%,#00e5ff,transparent 60%);top:20%;right:-15%;animation:float2 22s ease-in-out infinite}
+  .b3{background:radial-gradient(circle at 30% 30%,#ffd000,transparent 60%);bottom:-20%;left:15%;animation:float3 26s ease-in-out infinite}
+  .b4{background:radial-gradient(circle at 30% 30%,#7c3aed,transparent 60%);bottom:-10%;right:5%;animation:float1 20s ease-in-out infinite reverse}
+  .accent-glow{position:fixed;inset:auto;width:70vmax;height:70vmax;border-radius:50%;filter:blur(100px);opacity:.13;z-index:0;
+    background:radial-gradient(circle,var(--accent),transparent 60%);top:50%;left:50%;transform:translate(-50%,-50%);
+    transition:background .7s ease}
+  @keyframes float1{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6vmax,4vmax) scale(1.15)}}
+  @keyframes float2{0%,100%{transform:translate(0,0) scale(1.1)}50%{transform:translate(-7vmax,5vmax) scale(.9)}}
+  @keyframes float3{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(4vmax,-6vmax) scale(1.2)}}
+
+  /* ---------- deck ---------- */
+  .deck{position:relative;z-index:2;height:100%}
+  .slide{
+    position:absolute;inset:0;display:none;
+    padding:6vh 8vw;flex-direction:column;justify-content:center;
+  }
+  .slide.active{display:flex}
+  .slide.leaving{display:flex;animation:slideOut .35s forwards}
+  .slide.active{animation:slideIn .5s cubic-bezier(.2,.8,.2,1)}
+  @keyframes slideIn{from{opacity:0;transform:translateY(24px) scale(.99)}to{opacity:1;transform:none}}
+  @keyframes slideOut{to{opacity:0;transform:translateY(-18px) scale(.99)}}
+
+  .kicker{
+    display:inline-flex;align-items:center;gap:.6ch;align-self:flex-start;
+    font-size:clamp(.7rem,1.4vw,1rem);font-weight:800;letter-spacing:.14em;text-transform:uppercase;
+    color:#0a0a14;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    padding:.45em 1em;border-radius:999px;margin-bottom:.9em;
+    box-shadow:0 6px 24px -8px var(--accent);
+  }
+  h1.title{
+    font-size:clamp(1.9rem,5.2vw,4.2rem);line-height:1.04;margin:0 0 .5em;font-weight:850;letter-spacing:-.02em;
+    background:linear-gradient(120deg,#fff 20%,var(--accent) 120%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  }
+  ul.bullets{list-style:none;margin:0;padding:0;max-width:70ch}
+  ul.bullets li{
+    position:relative;padding:.5em 0 .5em 1.6em;
+    font-size:clamp(1rem,2.05vw,1.6rem);line-height:1.4;color:var(--ink);
+  }
+  ul.bullets li::before{
+    content:"";position:absolute;left:0;top:.95em;width:.7em;height:.7em;border-radius:3px;
+    background:linear-gradient(135deg,var(--accent),var(--accent2));transform:rotate(45deg);
+    box-shadow:0 0 14px -1px var(--accent);
+  }
+  ul.bullets li ul{list-style:none;margin:.35em 0 0;padding-left:.2em}
+  ul.bullets li ul li{font-size:.86em;color:var(--muted);padding:.28em 0 .28em 1.4em}
+  ul.bullets li ul li::before{width:.5em;height:.5em;top:1em;background:var(--muted);box-shadow:none}
+  strong{color:var(--accent);font-weight:800}
+  em{color:#ffd7ee;font-style:italic}
+  .sub{color:var(--muted);font-size:clamp(.85rem,1.6vw,1.15rem);margin-top:.6em;font-style:italic}
+  code{font-family:var(--mono);background:rgba(255,255,255,.1);color:#ffe08a;padding:.1em .45em;border-radius:6px;font-size:.86em}
+
+  /* reveal animation for content */
+  .reveal{opacity:0;animation:rise .6s cubic-bezier(.2,.75,.2,1) both}
+  .slide.active .reveal{animation-play-state:running}
+  @keyframes rise{from{opacity:0;transform:translateY(26px)}to{opacity:1;transform:none}}
+
+  /* code block */
+  pre{
+    margin:.4em 0 .8em;background:rgba(6,6,18,.82);border:1px solid var(--stroke);
+    border-radius:14px;padding:1em 1.15em;overflow-x:auto;max-width:100%;width:fit-content;
+    box-shadow:0 20px 50px -20px #000, inset 0 1px 0 rgba(255,255,255,.05);
+  }
+  /* size code so the longest line always fits the slide width — no scrolling */
+  pre code{background:none;color:#e9e9ff;font-size:clamp(.62rem,1.7vw,1.05rem);line-height:1.5;padding:0;
+    white-space:pre;display:block}
+  .tok-kw{color:#ff7edb}.tok-str{color:#8affc1}.tok-com{color:#7c85b8;font-style:italic}
+  .tok-fn{color:#7cc7ff}.tok-num{color:#ffd479}
+
+  /* table */
+  table{border-collapse:collapse;margin:.3em 0;max-width:100%;font-size:clamp(.8rem,1.7vw,1.35rem)}
+  th,td{border:1px solid var(--stroke);padding:.55em .9em;text-align:left}
+  thead th{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#0a0a14;font-weight:800}
+  tbody td:first-child{color:var(--muted);font-weight:700}
+  tbody tr:nth-child(even){background:rgba(255,255,255,.04)}
+
+  /* ---------- lead + section slides ---------- */
+  .slide.lead,.slide.section{align-items:center;text-align:center;justify-content:center}
+  .slide.lead .title{font-size:clamp(2.4rem,7vw,5.5rem)}
+  .slide.lead .sub{font-size:clamp(1rem,2.4vw,1.7rem);max-width:60ch}
+  .big-num{
+    font-size:clamp(4rem,16vw,12rem);font-weight:900;line-height:.9;letter-spacing:-.04em;
+    background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 10px 40px var(--accent));
+  }
+  .slide.section .title{font-size:clamp(1.8rem,5.5vw,4rem);margin-top:.1em}
+  .slide.section .kicker{align-self:center}
+
+  /* ladder chips on lead */
+  .chips{display:flex;flex-wrap:wrap;gap:.6em;justify-content:center;margin-top:1.4em}
+  .chip{padding:.5em 1em;border-radius:999px;border:1px solid var(--stroke);background:var(--card);
+    font-weight:700;font-size:clamp(.75rem,1.5vw,1.05rem);color:var(--ink)}
+  .chip b{color:var(--accent)}
+
+  /* ---------- chrome ---------- */
+  .progress{position:fixed;top:0;left:0;height:4px;z-index:10;background:linear-gradient(90deg,var(--accent),var(--accent2));
+    box-shadow:0 0 16px var(--accent);transition:width .4s cubic-bezier(.2,.8,.2,1);width:0}
+  .hud{position:fixed;bottom:18px;right:22px;z-index:10;display:flex;align-items:center;gap:14px;
+    color:var(--muted);font-size:.85rem;font-weight:700}
+  .hud .seg{padding:.3em .8em;border-radius:999px;background:var(--card);border:1px solid var(--stroke);color:var(--ink)}
+  .nav{position:fixed;bottom:16px;left:22px;z-index:10;display:flex;gap:10px}
+  .nav button{
+    width:44px;height:44px;border-radius:50%;border:1px solid var(--stroke);background:var(--card);color:var(--ink);
+    font-size:1.2rem;cursor:pointer;display:grid;place-items:center;transition:.2s;backdrop-filter:blur(6px)
+  }
+  .nav button:hover{background:var(--accent);color:#0a0a14;border-color:transparent;transform:translateY(-2px)}
+  .hint{position:fixed;top:16px;right:20px;z-index:10;color:var(--muted);font-size:.78rem;opacity:.7}
+
+
+  @media (max-width:640px){
+    .slide{padding:8vh 7vw}
+    .hint{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .blob,.accent-glow{animation:none}
+    .reveal,.slide.active{animation:none;opacity:1}
+  }
+</style>
+</head>
+<body>
+  <div class="bg" aria-hidden="true">
+    <div class="blob b1"></div><div class="blob b2"></div>
+    <div class="blob b3"></div><div class="blob b4"></div>
+  </div>
+  <div class="accent-glow" aria-hidden="true"></div>
+
+  <div class="progress" id="progress"></div>
+  <div class="hint">← → navigate · <b>F</b> fullscreen</div>
+  <div class="deck" id="deck"></div>
+
+  <div class="nav">
+    <button id="prev" title="Previous (←)">‹</button>
+    <button id="next" title="Next (→)">›</button>
+  </div>
+  <div class="hud">
+    <span class="seg" id="segLabel"></span>
+    <span id="counter"></span>
+  </div>
+
+
+<script>
+/* ---------- segment palette ---------- */
+const SEG = {
+  op:  {name:"Opening",              a:"#ff2e97", b:"#ff8a3d"},
+  s1:  {name:"1 · How LLMs work",    a:"#a855f7", b:"#6366f1"},
+  s2:  {name:"2 · Models & the API", a:"#06d6f5", b:"#3b82f6"},
+  brk: {name:"Break",                a:"#f59e0b", b:"#f43f5e"},
+  s3:  {name:"3 · Prompt eng.",      a:"#22e07a", b:"#06d6f5"},
+  s4:  {name:"4 · Context eng.",     a:"#fb7185", b:"#f97316"},
+  s5:  {name:"5 · Hands-on & wrap",  a:"#38bdf8", b:"#a855f7"},
+};
+
+/* helper for code with tiny highlighting */
+function code(str){
+  const esc = s => s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  const KW = /^(from|import|class|def|return|print)$/;
+  // Single pass over the raw string: each character is consumed exactly once,
+  // so inserted markup can never be re-matched by a later rule.
+  const re = /(#[^\n]*)|("(?:[^"\\\n]|\\.)*")|('(?:[^'\\\n]|\\.)*')|(\b\d+\.?\d*\b)|([A-Za-z_]\w*)/g;
+  let out = "", last = 0, m;
+  while ((m = re.exec(str))){
+    out += esc(str.slice(last, m.index));
+    if      (m[1]) out += '<span class="tok-com">'+esc(m[1])+'</span>';
+    else if (m[2]) out += '<span class="tok-str">'+esc(m[2])+'</span>';
+    else if (m[3]) out += '<span class="tok-str">'+esc(m[3])+'</span>';
+    else if (m[4]) out += '<span class="tok-num">'+m[4]+'</span>';
+    else if (m[5]) out += KW.test(m[5]) ? '<span class="tok-kw">'+m[5]+'</span>' : esc(m[5]);
+    last = m.index + m[0].length;
+  }
+  out += esc(str.slice(last));
+  return '<pre><code>'+out+'</code></pre>';
+}
+
+/* ---------- SLIDES ---------- */
+const slides = [
+/* 1 */ {seg:"op", kind:"lead", label:"1",
+  title:"Intro to AI &amp; LLMs",
+  html:`<div class="sub reveal">Agentic Coding &amp; AI Engineering — Lecture 1 of 5</div>
+        <div class="sub reveal" style="margin-top:.2em"><em>From your first prompt to production LLM applications</em></div>`},
+
+/* 2 */ {seg:"op", kind:"slide", label:"2", kicker:"Where you are",
+  title:"The 5-lecture arc",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>1️⃣ Intro to LLMs &amp; Prompting</strong> &nbsp;←&nbsp; <em>you are here</em></li>
+    <li class="reveal">2️⃣ Evaluations &amp; LLM-as-a-Judge</li>
+    <li class="reveal">3️⃣ RAG &amp; Evaluation-Driven Development</li>
+    <li class="reveal">4️⃣ Agents &amp; Orchestrator–Workers</li>
+    <li class="reveal">5️⃣ Multi-Agent Architecture (LangGraph)</li>
+  </ul>
+  <div class="sub reveal">Not five separate topics — one ladder, each rung forced by the last</div>`},
+
+/* 2b */ {seg:"op", kind:"slide", label:"2b", kicker:"The project you'll build",
+  title:"🎯 One app that grows every week",
+  html:`<ul class="bullets">
+    <li class="reveal">Each lecture stacks on the last:
+      <ul><li>Prompted <strong>LLM component</strong> → wrapped in <strong>evals</strong> → grounded with <strong>RAG</strong> → made to act as an <strong>agent</strong> → a <strong>multi-agent</strong> system</li>
+      <li>Served via your own <strong>MCP server</strong></li></ul></li>
+    <li class="reveal">Final result: a <strong>production-style, evaluated, multi-agent application</strong> you built end to end</li>
+  </ul>`},
+
+/* 3 */ {seg:"op", kind:"slide", label:"3", kicker:"Mental-model shift",
+  title:"Coding <em>using</em> AI → Building <em>with</em> AI",
+  html:`<ul class="bullets">
+    <li class="reveal">You already know: prompt an agent, let it write code</li>
+    <li class="reveal">New skill: the LLM is now a <strong>component inside your software</strong></li>
+    <li class="reveal">It's non-deterministic, it costs money per call, and it can be wrong on purpose</li>
+  </ul>`},
+
+/* 4 */ {seg:"op", kind:"slide", label:"4", kicker:"By the end of today",
+  title:"What you'll walk out with",
+  html:`<ul class="bullets">
+    <li class="reveal">Explain <em>how</em> an LLM produces text (and why it hallucinates)</li>
+    <li class="reveal">Read an API call and know what every parameter costs you</li>
+    <li class="reveal">Apply prompt &amp; context engineering deliberately, not by luck</li>
+    <li class="reveal">✅ Have your own code calling an LLM &amp; a local open-source model running</li>
+  </ul>`},
+
+/* SECTION 1 */ {seg:"s1", kind:"section", label:"§1", num:"1", kicker:"Segment 1 · ~20 min",
+  title:"How LLMs actually work"},
+
+/* 5 */ {seg:"s1", kind:"slide", label:"5", kicker:"A brief history",
+  title:"60 years in one slide",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>1966 · Eliza</strong> — pattern-matching "therapist"</li>
+    <li class="reveal"><strong>2017 · Transformers</strong> — <em>"Attention Is All You Need"</em></li>
+    <li class="reveal"><strong>2018 · BERT</strong> — first transformer in production (Google)</li>
+    <li class="reveal"><strong>2020 · GPT-3</strong> — first <em>large</em> LLM</li>
+    <li class="reveal"><strong>2022 · ChatGPT</strong> — the moment everything changed</li>
+  </ul>`},
+
+/* 6 */ {seg:"s1", kind:"slide", label:"6", kicker:"Before LLMs",
+  title:"One model per task",
+  html:`<ul class="bullets">
+    <li class="reveal">Sentiment? → train a sentiment model</li>
+    <li class="reveal">Classification? → train a classifier</li>
+    <li class="reveal">Q&amp;A? → train a Q&amp;A model</li>
+    <li class="reveal">Each needs its <strong>own labeled dataset</strong> + its own training</li>
+  </ul>`},
+
+/* 7 */ {seg:"s1", kind:"slide", label:"7", kicker:"GPT-3",
+  title:"Scale as a phase transition",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>175 billion parameters</strong> → new abilities appeared</li>
+    <li class="reveal"><strong>In-context learning</strong> — give examples <em>in the prompt</em>, no retraining</li>
+    <li class="reveal"><strong>Cross-task generalization</strong> — one model, many tasks</li>
+    <li class="reveal">Scale didn't just make it <em>better</em> — it made it <em>different</em></li>
+  </ul>`},
+
+/* 8 */ {seg:"s1", kind:"slide", label:"8", kicker:"The core mechanism",
+  title:"It predicts the next token. That's it.",
+  html:`<ul class="bullets">
+    <li class="reveal">Input text → probability distribution over the next token → <strong>sample one</strong> → append → repeat</li>
+    <li class="reveal">"The cat sat on the ___" → mat (0.31) · roof (0.12) · floor (0.09) …</li>
+    <li class="reveal">Reasoning, JSON, refusals — all <strong>emergent</strong> from this one loop</li>
+  </ul>`},
+
+/* 9 */ {seg:"s1", kind:"slide", label:"9", kicker:"Base models",
+  title:"…are just autocompleters",
+  html:`<ul class="bullets">
+    <li class="reveal">A raw ("base") model doesn't follow instructions</li>
+    <li class="reveal">Prompt: <em>"Write a poem about the sea."</em></li>
+    <li class="reveal">Base model might reply: <em>"Write a poem about the mountains. Write a poem about…"</em></li>
+    <li class="reveal">It <strong>continues the pattern</strong>, it doesn't <strong>obey the request</strong></li>
+  </ul>`},
+
+/* 10 */ {seg:"s1", kind:"slide", label:"10", kicker:"Alignment · step 1",
+  title:"Teaching it to obey: SFT",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Supervised Fine-Tuning (SFT)</strong></li>
+    <li class="reveal">Humans write <strong>ideal answers</strong> to many prompts</li>
+    <li class="reveal">Model is fine-tuned to <strong>imitate those demonstrations</strong></li>
+    <li class="reveal">Smaller, high-quality dataset → aligns the model to <em>follow instructions</em></li>
+    <li class="reveal">Result: <strong>InstructGPT</strong></li>
+  </ul>`},
+
+/* 11 */ {seg:"s1", kind:"slide", label:"11", kicker:"Alignment · step 2",
+  title:"Going further: RLHF",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Ranking is easier than writing</strong></li>
+    <li class="reveal">Humans <strong>rank</strong> several model answers, best → worst</li>
+    <li class="reveal">Train a <strong>reward model</strong> to predict those preferences</li>
+    <li class="reveal">Use it to fine-tune the LLM (RL, e.g. PPO)</li>
+    <li class="reveal">🤯 A <strong>1.3B RLHF</strong> model beat the <strong>175B SFT</strong> model in human preference</li>
+  </ul>`},
+
+/* 12 */ {seg:"s1", kind:"slide", label:"12", kicker:"No free lunch",
+  title:"Alignment has a cost",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Aligned ≠ strictly better</strong></li>
+    <li class="reveal">SFT/RLHF can <strong>lower raw benchmark scores</strong> (MMLU, HumanEval)</li>
+    <li class="reveal">The model trades <em>"being right on the test"</em> for <em>"being a good assistant"</em></li>
+    <li class="reveal">Users still <strong>prefer</strong> the aligned model</li>
+    <li class="reveal">🔑 A deliberate tradeoff, not an accident</li>
+  </ul>`},
+
+/* SECTION 2 */ {seg:"s2", kind:"section", label:"§2", num:"2", kicker:"Segment 2 · ~20 min",
+  title:"The model landscape &amp; the API"},
+
+/* 13 */ {seg:"s2", kind:"slide", label:"13", kicker:"Model types",
+  title:"Base → Instruct → Chat",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Base:</strong> next-token only. Autocomplete engine. (Llama-3.1-base)</li>
+    <li class="reveal"><strong>Instruct:</strong> +SFT +RLHF. One input → one output. (classify, extract)</li>
+    <li class="reveal"><strong>Chat:</strong> multi-turn with roles (system/user/assistant). (GPT-4o, Claude, Gemini)</li>
+    <li class="reveal">Chat = the default for user-facing apps</li>
+  </ul>`},
+
+/* 14 */ {seg:"s2", kind:"slide", label:"14", kicker:"Tokens",
+  title:"The atom of everything",
+  html:`<ul class="bullets">
+    <li class="reveal">Models don't see words — they see <strong>tokens</strong></li>
+    <li class="reveal">A token ≈ a word or word-piece ("token", "iz", "ation")</li>
+    <li class="reveal"><strong>You pay per token.</strong> Context limits are <strong>in tokens</strong>.</li>
+    <li class="reveal">128K tokens ≈ 96K English words — but <strong>far fewer</strong> in Hebrew / Chinese</li>
+  </ul>`},
+
+/* 15 */ {seg:"s2", kind:"slide", label:"15", kicker:"Gotchas",
+  title:"Why the model can't spell",
+  html:`<ul class="bullets">
+    <li class="reveal">It sees opaque tokens, <strong>not letters</strong> → struggles with char-level tasks ("how many r's in strawberry?")</li>
+    <li class="reveal">Each provider has its <strong>own tokenizer</strong> → same text, different token counts</li>
+    <li class="reveal">Common scheme: <strong>subword / byte-pair encoding</strong></li>
+  </ul>`},
+
+/* 16 */ {seg:"s2", kind:"slide", label:"16", kicker:"The call",
+  title:"Anatomy of an API call",
+  html: code(`response = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[...],
+    temperature=0.7,
+    max_tokens=500,
+)`) + `<ul class="bullets"><li class="reveal">Four levers: <strong>model · messages · temperature · max_tokens</strong></li></ul>`},
+
+/* 17 */ {seg:"s2", kind:"slide", label:"17", kicker:"The window",
+  title:"The context window",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Context window = max (input + output) in tokens</strong></li>
+    <li class="reveal">A <em>physical</em> property of the model — a hard wall</li>
+    <li class="reveal">Filled by: system prompt · history · retrieved docs (RAG) · user message · reserved output</li>
+    <li class="reveal">Everything competes for the same space</li>
+  </ul>`},
+
+/* 18 */ {seg:"s2", kind:"slide", label:"18", kicker:"A real failure mode",
+  title:'"Lost in the middle"',
+  html:`<ul class="bullets">
+    <li class="reveal">Models attend most to the <strong>start</strong> and <strong>end</strong> of the context</li>
+    <li class="reveal">Info buried in the <strong>middle</strong> can get missed</li>
+    <li class="reveal">🔑 Put critical instructions <strong>first</strong>, key context / the question <strong>last</strong></li>
+    <li class="reveal">For RAG: <strong>best-matching document first</strong></li>
+  </ul>`},
+
+/* 19 */ {seg:"s2", kind:"slide", label:"19", kicker:"Economics",
+  title:"Token economics",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Output tokens cost 2–4× input tokens</strong></li>
+    <li class="reveal">Cheap per call — but multiply by <strong>millions of turns</strong></li>
+    <li class="reveal">$0.01/turn × 5M turns = <strong>$50,000</strong></li>
+    <li class="reveal">🔑 Cost is an <strong>engineering constraint</strong>, not an afterthought</li>
+  </ul>`},
+
+/* 20 */ {seg:"s2", kind:"slide", label:"20", kicker:"A real decision",
+  title:"Open vs. closed models",
+  html:`<table>
+    <thead><tr><th></th><th>Closed (GPT, Claude, Gemini)</th><th>Open (Llama, Qwen, DeepSeek)</th></tr></thead>
+    <tbody>
+      <tr><td>Capability</td><td>Best-in-class</td><td>Catching up fast</td></tr>
+      <tr><td>Ops</td><td>Zero — they run it</td><td><strong>You run it</strong></td></tr>
+      <tr><td>Data</td><td>Leaves your system</td><td><strong>Stays private</strong></td></tr>
+      <tr><td>Risk</td><td>Lock-in, price, rate limits</td><td>Infra + maintenance burden</td></tr>
+    </tbody></table>`},
+
+/* 21 */ {seg:"s2", kind:"slide", label:"21", kicker:"Access",
+  title:"How to actually access a model",
+  html:`<ul class="bullets">
+    <li class="reveal">1. <strong>Direct API</strong> (SaaS) — OpenAI, Anthropic</li>
+    <li class="reveal">2. <strong>Cloud GenAI service</strong> — AWS Bedrock, Nebius</li>
+    <li class="reveal">3. <strong>Model marketplace</strong> — Together, Replicate</li>
+    <li class="reveal">4. <strong>Self-hosted</strong> — vLLM, Hugging Face on your own hardware</li>
+    <li class="reveal">⚡ <strong>Reasoning models</strong> (o-series, DeepSeek R1): "think" longer → better logic, higher cost/latency</li>
+  </ul>`},
+
+/* BREAK */ {seg:"brk", kind:"section", label:"☕", num:"☕", kicker:"~5 min",
+  title:"Break",
+  html:`<div class="sub reveal">Back to build your first LLM call · <em>Have your laptop + editor ready</em></div>`},
+
+/* SECTION 3 */ {seg:"s3", kind:"section", label:"§3", num:"3", kicker:"Segment 3 · ~20 min",
+  title:"Prompt engineering"},
+
+/* 23 */ {seg:"s3", kind:"slide", label:"23", kicker:"What it really is",
+  title:"You change the input, not the model",
+  html:`<ul class="bullets">
+    <li class="reveal">The weights are frozen. Prompting = training <em>yourself</em> to talk to it.</li>
+    <li class="reveal">Cheapest, fastest lever you have</li>
+    <li class="reveal">Same model + better prompt = dramatically better output</li>
+  </ul>`},
+
+/* 24 */ {seg:"s3", kind:"slide", label:"24", kicker:"Zero-shot",
+  title:"Instructions + the system prompt",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Zero-shot:</strong> instructions only, no examples</li>
+    <li class="reveal"><strong>System prompt</strong> = persona + rules + format ("You are a careful financial analyst…")</li>
+    <li class="reveal">Keep it <strong>short and general</strong></li>
+    <li class="reveal"><strong>Recency bias:</strong> weaker models attend to the <em>end</em> → put critical instructions <strong>last</strong></li>
+  </ul>`},
+
+/* 25 */ {seg:"s3", kind:"slide", label:"25", kicker:"The cheat sheet",
+  title:"Practical prompting tips",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Be concise</strong> — fewer words, less to misread</li>
+    <li class="reveal"><strong>Allow "I don't know"</strong> — cuts hallucination</li>
+    <li class="reveal"><strong>IDH template</strong> — Instruction → Data → Hint (re-state the task after long data)</li>
+    <li class="reveal"><strong>Delimit sections</strong> — <code>--- Product description --- … --- End ---</code></li>
+    <li class="reveal"><strong>Meaningful categories</strong> — "inconsistent" &gt; "3"</li>
+    <li class="reveal"><strong>Positive phrasing</strong> — say what <em>to</em> do, not what <em>not</em> to do</li>
+  </ul>`},
+
+/* 26 */ {seg:"s3", kind:"slide", label:"26", kicker:"The engineering unlock",
+  title:"Structured output",
+  html:`<ul class="bullets"><li class="reveal">Make the model fill a <em>schema</em>, not write prose</li></ul>`
+    + code(`class Answer(BaseModel):
+    label: str
+    confidence: float
+    reason: str`)
+    + `<ul class="bullets">
+      <li class="reveal">Ask for JSON, define the shape, give an example — modern APIs enforce it (JSON mode)</li>
+      <li class="reveal">🔑 Turns a chatbot into a <strong>software component</strong></li>
+    </ul>`},
+
+/* 27 */ {seg:"s3", kind:"slide", label:"27", kicker:"For hard problems",
+  title:"Chain-of-thought",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>"Let's think step by step."</strong></li>
+    <li class="reveal">For math / logic / multi-step: ask it to reason <em>before</em> answering</li>
+    <li class="reveal">More tokens spent reasoning → better answers</li>
+    <li class="reveal">(This is what "reasoning models" automate internally)</li>
+  </ul>`},
+
+/* 28 */ {seg:"s3", kind:"slide", label:"28", kicker:"Show, don't tell",
+  title:"Few-shot prompting",
+  html:`<ul class="bullets">
+    <li class="reveal">Put examples in the prompt</li>
+    <li class="reveal">Great for weaker models &amp; when fine-tuning isn't worth it</li>
+    <li class="reveal">⚠️ Non-diverse examples → <strong>bias</strong> the output</li>
+    <li class="reveal">Cover the input distribution: vary the examples across dimensions</li>
+  </ul>`},
+
+/* 29 */ {seg:"s3", kind:"slide", label:"29", kicker:"Few-shot at scale",
+  title:"Retrieve the relevant examples",
+  html:`<ul class="bullets">
+    <li class="reveal">Too many examples to fit? Store a big <strong>example bank</strong></li>
+    <li class="reveal">Embed the query → pull the <strong>most similar</strong> examples → build a focused few-shot prompt</li>
+    <li class="reveal">👀 This is <strong>RAG</strong>, applied to examples (Lecture 3)</li>
+  </ul>`},
+
+/* SECTION 4 */ {seg:"s4", kind:"section", label:"§4", num:"4", kicker:"Segment 4 · ~15 min",
+  title:"Context engineering"},
+
+/* 30 */ {seg:"s4", kind:"slide", label:"30", kicker:"The next level",
+  title:"Prompt → context engineering",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Prompt engineering:</strong> optimize the <em>prompt</em></li>
+    <li class="reveal"><strong>Context engineering:</strong> optimize <em>everything the model sees</em></li>
+    <li class="reveal">System prompt · history · retrieved docs · tools · memory · output schema</li>
+    <li class="reveal">You're designing the model's <strong>entire runtime environment</strong></li>
+  </ul>`},
+
+/* 31 */ {seg:"s4", kind:"slide", label:"31", kicker:"A filing system",
+  title:"Static vs. dynamic context",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Static (you design once)</strong>
+      <ul><li>System prompt: behavior, rules, persona, stable examples</li>
+      <li>Output schema (JSON, enums)</li></ul></li>
+    <li class="reveal"><strong>Dynamic (assembled per request)</strong>
+      <ul><li>User message · conversation history</li>
+      <li>Long-term memory · retrieved docs (RAG) · tool definitions</li></ul></li>
+  </ul>`},
+
+/* 32 */ {seg:"s4", kind:"slide", label:"32", kicker:"The core principle",
+  title:"Context is expensive real estate",
+  html:`<ul class="bullets">
+    <li class="reveal">Every token costs money <em>and</em> competes for attention</li>
+    <li class="reveal">Stuffing irrelevant context <strong>drowns</strong> the real question</li>
+    <li class="reveal">Rule of thumb: input ≤ <strong>50%</strong> of the context window</li>
+    <li class="reveal">Case study — Tavily: cut tokens <strong>&gt;50%</strong> → <strong>higher</strong> quality (less distraction)</li>
+  </ul>`},
+
+/* 33 */ {seg:"s4", kind:"slide", label:"33", kicker:"Craft",
+  title:"System prompt &amp; history",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>System prompt — include:</strong> role, rules, output format, stable few-shot, guardrails ("if unsure, say no")</li>
+    <li class="reveal"><strong>System prompt — exclude:</strong> the actual task, per-request data, long instructions</li>
+    <li class="reveal"><strong>History</strong> (chat has no memory!) — options:
+      <ul><li><strong>Sliding window</strong> (last N turns) · <strong>Summarize</strong> old turns · <strong>Retrieve</strong> only relevant turns</li></ul></li>
+  </ul>`},
+
+/* 34 */ {seg:"s4", kind:"slide", label:"34", kicker:"Preview",
+  title:"RAG &amp; tools: the two big levers",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>RAG</strong> — search a knowledge base, inject top results, answer <em>grounded</em> in them
+      <ul><li>🔑 The single most impactful technique for <strong>reducing hallucination</strong></li></ul></li>
+    <li class="reveal"><strong>Tools / function calling</strong> — model emits a structured request → <strong>your code runs it</strong> → result back
+      <ul><li>The foundation of <strong>agents</strong> (Lecture 4)</li></ul></li>
+  </ul>`},
+
+/* 35 */ {seg:"s4", kind:"slide", label:"35", kicker:"The whole picture",
+  title:"Assembling context in production",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Every request runs a pipeline:</strong></li>
+    <li class="reveal">load system prompt → retrieve history → retrieve docs (RAG) → attach tools → append user message → <strong>count tokens → trim if over budget</strong></li>
+    <li class="reveal">Prompting is a <em>string</em>. Context engineering is a <em>system</em>.</li>
+  </ul>`},
+
+/* SECTION 5 */ {seg:"s5", kind:"section", label:"§5", num:"5", kicker:"Segment 5 · ~30 min",
+  title:"Hands-on &amp; wrap",
+  html:`<div class="sub reveal">Two things, on your machine → then takeaways</div>`},
+
+/* 36 */ {seg:"s5", kind:"slide", label:"36", kicker:"Hands-on",
+  title:"🛠️ What we're building",
+  html:`<ul class="bullets">
+    <li class="reveal">1. Call an LLM from Python with the <strong>OpenAI library</strong> and print the response</li>
+    <li class="reveal">2. Run a small <strong>open-source model locally</strong> with <strong>Hugging Face</strong></li>
+    <li class="reveal">Goal: close the loop from <em>concept</em> → <em>your code talking to a model</em></li>
+  </ul>`},
+
+/* 37 */ {seg:"s5", kind:"slide", label:"37", kicker:"Exercise 1",
+  title:"Hello, LLM (OpenAI library)",
+  html: code(`from openai import OpenAI
+client = OpenAI()
+
+resp = client.chat.completions.create(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "Say hello in one sentence."}],
+)
+print(resp.choices[0].message.content)`)
+  + `<ul class="bullets"><li class="reveal"><strong>Your turn:</strong> run it → get a response</li></ul>`},
+
+/* 38 */ {seg:"s5", kind:"slide", label:"38", kicker:"Exercise 1b",
+  title:"Now engineer it",
+  html:`<ul class="bullets">
+    <li class="reveal">Change one thing at a time and watch the output:</li>
+    <li class="reveal">Add a <strong>system prompt</strong> — give it a persona / rules</li>
+    <li class="reveal">Set <strong>temperature</strong> <code>0</code> vs <code>1</code> — run twice each, compare</li>
+    <li class="reveal">Ask for <strong>structured output</strong> (JSON: <code>answer</code>, <code>confidence</code>)</li>
+    <li class="reveal">🔑 You just did prompt engineering <em>and</em> context engineering</li>
+  </ul>`},
+
+/* 39 */ {seg:"s5", kind:"slide", label:"39", kicker:"Exercise 2",
+  title:"Run an open model locally",
+  html: code(`from transformers import pipeline
+pipe = pipeline("text-generation", model="Qwen/Qwen2.5-0.5B-Instruct")
+print(pipe("Say hello in one sentence.")[0]["generated_text"])`)
+  + `<ul class="bullets"><li class="reveal">No API key. No data leaving your machine. <strong>You are the infra now.</strong></li></ul>`},
+
+/* 40 */ {seg:"s5", kind:"slide", label:"40", kicker:"Reflect",
+  title:"Closed vs. open, side by side",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>You just ran both. What did you feel?</strong></li>
+    <li class="reveal">Closed (OpenAI): fast, strong, easy — but paid, external, rate-limited</li>
+    <li class="reveal">Open (HF local): private, free-per-call, controllable — but slower, weaker, your ops</li>
+    <li class="reveal">🔑 The choice is a <strong>tradeoff</strong>, and now you've lived it</li>
+  </ul>`},
+
+/* 41 */ {seg:"s5", kind:"slide", label:"41", kicker:"Remember these",
+  title:"Key takeaways",
+  html:`<ul class="bullets">
+    <li class="reveal">LLMs are <strong>next-token predictors</strong> — reasoning &amp; chat build on that</li>
+    <li class="reveal"><strong>Alignment has a cost</strong> — "better" depends on what you measure</li>
+    <li class="reveal"><strong>Tokens are the currency</strong> — cost, limits, and what the model sees</li>
+    <li class="reveal"><strong>Prompting is engineering</strong> — iterate, don't incant</li>
+    <li class="reveal"><strong>Context engineering &gt; prompt engineering</strong> in production</li>
+  </ul>`},
+
+/* 42 */ {seg:"s5", kind:"slide", label:"42", kicker:"Next lecture",
+  title:"How do we know it works?",
+  html:`<ul class="bullets">
+    <li class="reveal"><strong>Lecture 2 — Evaluation</strong></li>
+    <li class="reveal">Today you built something. But <em>is it any good?</em></li>
+    <li class="reveal">You can't <code>assert output == "expected"</code> on a probabilistic system</li>
+    <li class="reveal">Next: golden datasets, rubrics, <strong>LLM-as-a-judge</strong></li>
+  </ul>`},
+
+/* 43 */ {seg:"s5", kind:"lead", label:"43",
+  title:"Step 1 done. ✅",
+  html:`<div class="sub reveal">From coding <em>with</em> AI → building <em>with</em> AI. You built your first LLM app today.</div>
+    <div class="chips">
+      <span class="chip"><b>Prompting</b></span>
+      <span class="chip">Evals</span>
+      <span class="chip">RAG</span>
+      <span class="chip">Agents</span>
+      <span class="chip">Multi-agent</span>
+    </div>
+    <div class="sub reveal" style="margin-top:1.4em"><em>Questions?</em></div>`},
+];
+
+/* ---------- render ---------- */
+const deck = document.getElementById('deck');
+slides.forEach((s,i)=>{
+  const seg = SEG[s.seg];
+  const el = document.createElement('section');
+  el.className = 'slide ' + (s.kind||'slide');
+  el.dataset.i = i;
+  el.style.setProperty('--accent', seg.a);
+  el.style.setProperty('--accent2', seg.b);
+
+  let inner = '';
+  if(s.kind==='section'){
+    inner += `<div class="big-num reveal">${s.num||''}</div>`;
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else if(s.kind==='lead'){
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  } else {
+    if(s.kicker) inner += `<div class="kicker reveal">${s.kicker}</div>`;
+    inner += `<h1 class="title reveal">${s.title}</h1>`;
+    if(s.html) inner += s.html;
+  }
+  el.innerHTML = inner;
+
+  // stagger reveal children
+  const revs = el.querySelectorAll('.reveal, ul.bullets li, pre, table');
+  revs.forEach((r,idx)=>{ if(!r.classList.contains('reveal')) r.classList.add('reveal');
+    r.style.animationDelay = (0.12 + idx*0.08)+'s'; });
+
+  deck.appendChild(el);
+});
+
+/* ---------- navigation ---------- */
+const slidesEls = [...document.querySelectorAll('.slide')];
+const total = slidesEls.length;
+const progress = document.getElementById('progress');
+const counter = document.getElementById('counter');
+const segLabel = document.getElementById('segLabel');
+const glow = document.querySelector('.accent-glow');
+let cur = 0;
+
+function show(n){
+  n = Math.max(0, Math.min(total-1, n));
+  slidesEls.forEach(el=>el.classList.remove('active'));
+  const el = slidesEls[cur=n];
+  // reflow to restart animations
+  void el.offsetWidth;
+  el.classList.add('active');
+  const s = slides[n], seg = SEG[s.seg];
+  progress.style.width = ((n+1)/total*100)+'%';
+  counter.textContent = s.label + ' / 43';
+  segLabel.textContent = seg.name;
+  glow.style.background = `radial-gradient(circle, ${seg.a}, transparent 60%)`;
+  document.documentElement.style.setProperty('--accent', seg.a);
+  document.documentElement.style.setProperty('--accent2', seg.b);
+  location.hash = n;
+}
+function next(){ show(cur+1); }
+function prev(){ show(cur-1); }
+
+document.getElementById('next').onclick = next;
+document.getElementById('prev').onclick = prev;
+
+document.addEventListener('keydown', e=>{
+  if(['ArrowRight','PageDown',' '].includes(e.key)){ e.preventDefault(); next(); }
+  else if(['ArrowLeft','PageUp'].includes(e.key)){ e.preventDefault(); prev(); }
+  else if(e.key==='Home'){ show(0); }
+  else if(e.key==='End'){ show(total-1); }
+  else if(e.key==='f'||e.key==='F'){ if(!document.fullscreenElement) document.documentElement.requestFullscreen(); else document.exitFullscreen(); }
+});
+
+/* touch swipe */
+let tx=0;
+addEventListener('touchstart',e=>tx=e.changedTouches[0].clientX,{passive:true});
+addEventListener('touchend',e=>{ const dx=e.changedTouches[0].clientX-tx; if(Math.abs(dx)>50){ dx<0?next():prev(); } },{passive:true});
+
+/* start (support deep-link via hash) */
+const start = parseInt(location.hash.slice(1));
+show(Number.isInteger(start)?start:0);
+</script>
+</body>
+</html>
